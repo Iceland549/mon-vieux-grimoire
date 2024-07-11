@@ -37,6 +37,8 @@ exports.modifyBook = (req, res, next) => {
     } : { ...req.body};
 
     delete bookObject._userId;
+    delete bookObject.ratings; // Empêcher la modification des notes
+    delete bookObject.averageRating; // Empêcher la modification de la note
     Book.findOne({_id: req.params.id})
         .then((book) => {
             if (book.userId != req.auth.userId) {
@@ -82,3 +84,53 @@ exports.getAllBooks = (req, res, next) => {
         .then(books => res.status(200).json(books))
         .catch(error => res.status(400).json({ error }));
 };
+
+exports.getBestRatingBooks = (req, res, next) => {
+    Book.find()
+        .sort({ averageRating: -1 }) 
+        .limit(3) 
+        .then(books => res.status(200).json(books))
+        .catch(error => res.status(400).json({ error }));
+};
+
+exports.rateBook = async (req, res, next) => {
+    try {
+        const { userId, rating } = req.body;
+        const bookId = req.params.id;
+        console.log('Received bookId:', bookId); 
+
+        // Vérification de la validité de la note
+        if (rating < 0 || rating > 5) {
+            return res.status(400).json({ error: 'La note doit être comprise entre 0 et 5.' });
+        }
+
+        // Recherche du livre par ID
+        const book = await Book.findById(bookId);
+        if (!book) {
+            return res.status(404).json({ error: 'Livre non trouvé.' });
+        }
+
+        // Vérification si l'utilisateur a déjà noté ce livre
+        if (book.hasUserRated(userId)) {
+            return res.status(400).json({ error: 'Vous avez déjà noté ce livre.' });
+        }
+
+        // Ajout de la nouvelle évaluation
+        book.ratings.push({ userId, grade: rating });
+
+        // Calcul de la nouvelle note moyenne
+        book.averageRating = book.ratings.reduce((sum, rating) => sum + rating.grade, 0) / book.ratings.length;
+
+        // Sauvegarde du livre mis à jour
+        await book.save();
+
+        // Réponse avec le livre mis à jour
+        res.status(200).json(book);
+    } catch (error) {
+        console.error('Rate book error:', error); 
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
