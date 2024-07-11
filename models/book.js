@@ -9,9 +9,22 @@ const bookSchema = mongoose.Schema({
   genre: { type: String, required: true },
   ratings: [{
     userId: { type: String, required: true },
-    grade: { type: Number, required: true }
+    grade: { type: Number, required: true, min: 0, max: 5 }
   }],
   averageRating: { type: Number, required: true }
 });
+
+bookSchema.methods.calculateAverageRating = function() {
+  if (this.ratings.length === 0) {
+    this.averageRating = 0;
+  } else {
+    const sum = this.ratings.reduce((total, rating) => total + rating.grade, 0);
+    this.averageRating = sum / this.ratings.length;
+  }
+};
+
+bookSchema.methods.hasUserRated = function(userId) {
+  return this.ratings.some(rating => rating.userId === userId);
+};
 
 module.exports = mongoose.model('Book', bookSchema);
