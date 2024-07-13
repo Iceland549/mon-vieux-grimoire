@@ -11,7 +11,7 @@ const bookSchema = mongoose.Schema({
     userId: { type: String, required: true },
     grade: { type: Number, required: true, min: 0, max: 5 }
   }],
-  averageRating: { type: Number, required: true }
+  averageRating: { type: Number, required: true, default: 0 }
 });
 
 bookSchema.methods.calculateAverageRating = function() {
@@ -24,7 +24,7 @@ bookSchema.methods.calculateAverageRating = function() {
 };
 
 bookSchema.methods.hasUserRated = function(userId) {
-  return this.ratings.some(rating => rating.userId === userId);
+  return this.ratings.some(rating => rating.userId.toString() === userId.toString());
 };
 
 module.exports = mongoose.model('Book', bookSchema);
