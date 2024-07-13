@@ -1,1 +1,5 @@
-node_modules
+# Dépendances
+/node_modules
+
+# Dossier d'images uploadées
+/images
